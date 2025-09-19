@@ -267,3 +267,168 @@ export const getAllProjectsAdmin = cache(async (): Promise<Project[]> => {
     return []
   }
 })
+
+// Add these functions to your existing src/lib/db/projects.ts file
+
+/**
+ * Get a single project by ID (admin function)
+ * Used for editing projects in admin panel
+ */
+export const getProjectByIdAdmin = cache(async (id: string): Promise<Project | null> => {
+  try {
+    const projectRef = adminDb.collection('projects').doc(id)
+    const doc = await projectRef.get()
+
+    if (!doc.exists) {
+      return null
+    }
+
+    return transformProjectDoc(doc)
+  } catch (error) {
+    console.error('Error fetching project by ID:', error)
+    return null
+  }
+})
+
+/**
+ * Create a new project
+ * Used in admin panel project creation
+ */
+export async function createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  try {
+    const now = new Date()
+    const newProject = {
+      ...projectData,
+      createdAt: now,
+      updatedAt: now,
+    }
+
+    const docRef = await adminDb.collection('projects').add(newProject)
+    return docRef.id
+  } catch (error) {
+    console.error('Error creating project:', error)
+    throw new Error('Failed to create project')
+  }
+}
+
+/**
+ * Update an existing project
+ * Used in admin panel project editing
+ */
+export async function updateProject(id: string, projectData: Partial<Omit<Project, 'id' | 'createdAt'>>): Promise<void> {
+  try {
+    const projectRef = adminDb.collection('projects').doc(id)
+    
+    // Check if project exists
+    const doc = await projectRef.get()
+    if (!doc.exists) {
+      throw new Error('Project not found')
+    }
+
+    const updatedProject = {
+      ...projectData,
+      updatedAt: new Date(),
+    }
+
+    await projectRef.update(updatedProject)
+  } catch (error) {
+    console.error('Error updating project:', error)
+    throw new Error('Failed to update project')
+  }
+}
+
+/**
+ * Delete a project
+ * Used in admin panel project management
+ */
+export async function deleteProject(id: string): Promise<void> {
+  try {
+    const projectRef = adminDb.collection('projects').doc(id)
+    
+    // Check if project exists
+    const doc = await projectRef.get()
+    if (!doc.exists) {
+      throw new Error('Project not found')
+    }
+
+    await projectRef.delete()
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    throw new Error('Failed to delete project')
+  }
+}
+
+/**
+ * Toggle project published status
+ * Quick action for admin panel
+ */
+export async function toggleProjectPublished(id: string): Promise<void> {
+  try {
+    const projectRef = adminDb.collection('projects').doc(id)
+    const doc = await projectRef.get()
+    
+    if (!doc.exists) {
+      throw new Error('Project not found')
+    }
+
+    const currentData = doc.data()
+    await projectRef.update({
+      published: !currentData?.published,
+      updatedAt: new Date(),
+    })
+  } catch (error) {
+    console.error('Error toggling project published status:', error)
+    throw new Error('Failed to toggle project status')
+  }
+}
+
+/**
+ * Toggle project featured status
+ * Quick action for admin panel
+ */
+export async function toggleProjectFeatured(id: string): Promise<void> {
+  try {
+    const projectRef = adminDb.collection('projects').doc(id)
+    const doc = await projectRef.get()
+    
+    if (!doc.exists) {
+      throw new Error('Project not found')
+    }
+
+    const currentData = doc.data()
+    await projectRef.update({
+      featured: !currentData?.featured,
+      updatedAt: new Date(),
+    })
+  } catch (error) {
+    console.error('Error toggling project featured status:', error)
+    throw new Error('Failed to toggle project featured status')
+  }
+}
+
+/**
+ * Bulk update project statuses
+ * For admin operations
+ */
+export async function bulkUpdateProjects(
+  projectIds: string[], 
+  updates: Partial<Pick<Project, 'published' | 'featured' | 'status'>>
+): Promise<void> {
+  try {
+    const batch = adminDb.batch()
+    const now = new Date()
+
+    for (const id of projectIds) {
+      const projectRef = adminDb.collection('projects').doc(id)
+      batch.update(projectRef, {
+        ...updates,
+        updatedAt: now,
+      })
+    }
+
+    await batch.commit()
+  } catch (error) {
+    console.error('Error bulk updating projects:', error)
+    throw new Error('Failed to bulk update projects')
+  }
+}
