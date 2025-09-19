@@ -27,10 +27,10 @@ export const siteConfig = {
   url: "https://iamdevnd.dev",
   ogImage: "https://iamdevnd.dev/images/og-default.png",
   links: {
-    twitter: "https://twitter.com/devnd", // Update with your actual Twitter
-    github: "https://github.com/devnd", // Update with your actual GitHub
-    Bluesky: "https://devnd.bsky.social", // Update with your actual LinkedIn
-    email: "iamdevnd@gmail.com", // Update with your actual email
+    github: "https://github.com/iamdevnd",
+    bluesky: "https://devnd.bsky.social",
+    calendar: "https://app.cal.com/dnpro/",
+    email: "iamdevnd@gmail.com",
   },
 }
 
@@ -69,7 +69,7 @@ export const footerLinks = {
       href: "/",
     },
     {
-      title: "About",
+      title: "About", 
       href: "/about",
     },
     {
@@ -88,20 +88,21 @@ export const footerLinks = {
   social: [
     {
       title: "GitHub",
-      href: siteConfig.links.github,
+      href: "https://github.com/iamdevnd",
     },
     {
       title: "Bluesky",
-      href: siteConfig.links.Bluesky,
+      href: "https://devnd.bsky.social",
     },
     {
-      title: "Twitter",
-      href: siteConfig.links.twitter,
+      title: "Schedule Call",
+      href: "https://app.cal.com/dnpro/",
     },
   ],
+  // Remove legal links if you don't need them, or keep as placeholder
   legal: [
     {
-      title: "Privacy Policy",
+      title: "Privacy Policy", 
       href: "/privacy",
     },
     {
@@ -151,9 +152,10 @@ export const skills = {
 } as const
 
 // Contact information
+// Update contact info too
 export const contactInfo = {
-  email: "hello@iamdevnd.dev",
-  location: "Available for Remote Work",
+  email: "iamdevnd@gmail.com",
+  location: "Available for Remote Work", 
   timezone: "EST (UTC-5)",
   availability: "Open to new opportunities",
 } as const

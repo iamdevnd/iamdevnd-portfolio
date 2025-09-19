@@ -22,7 +22,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
       
       {/* Main Content */}
       <main className="flex-1">
-        {children}
+        <div className="mx-auto max-w-7xl"> {/* Add this wrapper */}
+          {children}
+        </div>
       </main>
       
       {/* Footer */}

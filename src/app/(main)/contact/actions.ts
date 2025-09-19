@@ -70,32 +70,29 @@ async function verifyRecaptcha(token: string): Promise<boolean> {
     })
 
     const data = await response.json()
-    return data.success && data.score > 0.5 // Adjust score threshold as needed
+    return data.success && data.score > 0.5
   } catch (error) {
     console.error("reCAPTCHA verification failed:", error)
     return false
   }
 }
 
-// Rate limiting check (simple implementation)
+// Rate limiting check
 async function checkRateLimit(email: string, ip?: string): Promise<boolean> {
   try {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
 
-    // Check submissions from this email in the last hour
     const emailQuery = adminDb
       .collection("contactSubmissions")
       .where("email", "==", email)
       .where("createdAt", ">=", oneHourAgo)
 
     const emailSnapshot = await emailQuery.get()
-    
-    if (emailSnapshot.size >= 3) { // Max 3 submissions per email per hour
+    if (emailSnapshot.size >= 3) {
       return false
     }
 
-    // Check submissions from this IP in the last hour (if IP available)
     if (ip) {
       const ipQuery = adminDb
         .collection("contactSubmissions")
@@ -103,8 +100,7 @@ async function checkRateLimit(email: string, ip?: string): Promise<boolean> {
         .where("createdAt", ">=", oneHourAgo)
 
       const ipSnapshot = await ipQuery.get()
-      
-      if (ipSnapshot.size >= 5) { // Max 5 submissions per IP per hour
+      if (ipSnapshot.size >= 5) {
         return false
       }
     }
@@ -112,11 +108,11 @@ async function checkRateLimit(email: string, ip?: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error("Rate limit check failed:", error)
-    return true // Allow submission if check fails
+    return true
   }
 }
 
-// Save submission to Firestore
+// Save submission
 async function saveSubmission(data: ContactFormData, metadata: any) {
   try {
     const submissionData = {
@@ -129,11 +125,10 @@ async function saveSubmission(data: ContactFormData, metadata: any) {
     await adminDb.collection("contactSubmissions").add(submissionData)
   } catch (error) {
     console.error("Failed to save submission:", error)
-    // Don't throw here - email is more important than storage
   }
 }
 
-// Send notification email
+// Send notification email (TO YOU)
 async function sendNotificationEmail(data: ContactFormData): Promise<boolean> {
   if (!process.env.RESEND_API_KEY) {
     console.error("Resend API key not configured")
@@ -197,8 +192,8 @@ Time: ${new Date().toLocaleString()}
     `
 
     await resend.emails.send({
-      from: "Portfolio Contact <noreply@iamdevnd.dev>", // Update with your domain
-      to: [process.env.ADMIN_EMAIL || "hello@iamdevnd.dev"], // Update with your email
+      from: "Portfolio Contact <portfolio@iamdevnd.dev>", // ✅ Updated
+      to: ["iamdevnd@gmail.com"], // ✅ Updated
       replyTo: data.email,
       subject: `New Contact: ${data.subject}`,
       html: emailHtml,
@@ -212,7 +207,7 @@ Time: ${new Date().toLocaleString()}
   }
 }
 
-// Send confirmation email to user
+// Send confirmation email (TO USER)
 async function sendConfirmationEmail(data: ContactFormData): Promise<boolean> {
   try {
     const confirmationHtml = `
@@ -236,7 +231,7 @@ async function sendConfirmationEmail(data: ContactFormData): Promise<boolean> {
     `
 
     await resend.emails.send({
-      from: "Dev ND <noreply@iamdevnd.dev>", // Update with your domain
+      from: "Dev ND <portfolio@iamdevnd.dev>", // ✅ Updated
       to: [data.email],
       subject: "Thanks for reaching out!",
       html: confirmationHtml,
@@ -254,7 +249,6 @@ export async function submitContactForm(
   formData: FormData
 ): Promise<ContactFormResponse> {
   try {
-    // Extract form data
     const rawData = {
       name: formData.get("name") as string,
       email: formData.get("email") as string,
@@ -267,9 +261,7 @@ export async function submitContactForm(
       recaptchaToken: formData.get("recaptchaToken") as string,
     }
 
-    // Validate form data
     const validationResult = contactFormSchema.safeParse(rawData)
-    
     if (!validationResult.success) {
       return {
         success: false,
@@ -280,7 +272,6 @@ export async function submitContactForm(
 
     const data = validationResult.data
 
-    // Verify reCAPTCHA if token provided
     if (data.recaptchaToken) {
       const recaptchaValid = await verifyRecaptcha(data.recaptchaToken)
       if (!recaptchaValid) {
@@ -291,7 +282,6 @@ export async function submitContactForm(
       }
     }
 
-    // Check rate limiting
     const rateLimitOk = await checkRateLimit(data.email)
     if (!rateLimitOk) {
       return {
@@ -300,9 +290,7 @@ export async function submitContactForm(
       }
     }
 
-    // Send notification email
     const emailSent = await sendNotificationEmail(data)
-    
     if (!emailSent) {
       return {
         success: false,
@@ -310,13 +298,11 @@ export async function submitContactForm(
       }
     }
 
-    // Send confirmation email (don't fail if this doesn't work)
     await sendConfirmationEmail(data)
 
-    // Save to database
     await saveSubmission(data, {
       userAgent: formData.get("userAgent"),
-      ipAddress: formData.get("ipAddress"), // You'll need to get this from headers
+      ipAddress: formData.get("ipAddress"),
       source: "portfolio_contact_form",
     })
 

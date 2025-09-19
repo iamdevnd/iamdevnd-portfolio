@@ -41,10 +41,11 @@ export default async function HomePage() {
     <div className="flex flex-col">
       {/* Hero Section */}
       <section className="relative py-20 md:py-32 overflow-hidden">
-        {/* Background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-violet-50 dark:from-blue-950/20 dark:via-background dark:to-violet-950/20" />
-        
-        <div className="container relative">
+        {/* ✅ Updated Background */}
+        <div className="absolute inset-0 animated-bg opacity-10" />
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white/80 to-violet-50/50 dark:from-blue-950/20 dark:via-background/90 dark:to-violet-950/20" />
+
+        <div className="container relative mx-auto max-w-7xl">
           <div className="mx-auto max-w-4xl text-center">
             <div className="mb-6">
               <div className="inline-flex items-center rounded-full border px-4 py-2 text-sm font-medium bg-background/60 backdrop-blur-sm">

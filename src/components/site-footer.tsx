@@ -18,7 +18,7 @@
 //Professional Polish: Status badge and decorative elements
 ////
 import Link from "next/link"
-import { Github, Linkedin, Twitter, Mail, MapPin, Clock } from "lucide-react"
+import { Github, Linkedin, Twitter, Mail, MapPin, Clock, Calendar, MessageSquare } from "lucide-react"
 
 import { siteConfig, footerLinks, contactInfo } from "@/config/site"
 import { cn } from "@/lib/utils"
@@ -26,11 +26,12 @@ import { cn } from "@/lib/utils"
 export function SiteFooter() {
   const currentYear = new Date().getFullYear()
 
+  // Update the socialIcons object to include your new links
   const socialIcons = {
-    github: Github,
-    linkedin: Linkedin,
-    twitter: Twitter,
-  }
+  github: Github,
+  bluesky: MessageSquare, // Using MessageSquare for Bluesky
+  "schedule call": Calendar, // Using Calendar for Cal.com
+}
 
   return (
     <footer className="border-t bg-background">
