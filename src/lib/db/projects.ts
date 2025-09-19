@@ -62,13 +62,40 @@ export interface Project {
 }
 
 // Transform Firestore document to Project type
+// Transform Firestore document to Project type
 function transformProjectDoc(doc: any): Project {
   const data = doc.data()
+  
+  // Properly handle Firebase Timestamps
+  const createdAt = data.createdAt?.toDate?.() || new Date()
+  const updatedAt = data.updatedAt?.toDate?.() || new Date()
+  
   return {
     id: doc.id,
-    ...data,
-    createdAt: data.createdAt?.toDate() || new Date(),
-    updatedAt: data.updatedAt?.toDate() || new Date(),
+    title: data.title || '',
+    description: data.description || '',
+    longDescription: data.longDescription,
+    excerpt: data.excerpt || '',
+    featuredImage: data.featuredImage || '',
+    images: data.images || [],
+    technologies: data.technologies || [],
+    category: data.category || '',
+    githubUrl: data.githubUrl,
+    liveUrl: data.liveUrl,
+    demoUrl: data.demoUrl,
+    featured: data.featured || false,
+    published: data.published || false,
+    slug: data.slug || '',
+    status: data.status || 'planning',
+    metaTitle: data.metaTitle,
+    metaDescription: data.metaDescription,
+    challenges: data.challenges,
+    solutions: data.solutions,
+    learnings: data.learnings,
+    metrics: data.metrics || [],
+    // Convert Firebase Timestamps to serializable Date strings
+    createdAt: createdAt,
+    updatedAt: updatedAt,
   } as Project
 }
 

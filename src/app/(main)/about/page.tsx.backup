@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next"
 import { Mail, MapPin, Clock, Calendar } from "lucide-react"
 import Link from "next/link"
