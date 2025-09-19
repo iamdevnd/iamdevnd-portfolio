@@ -1,6 +1,6 @@
 "use client"
 
-import type { Metadata } from "next"
+//import type { Metadata } from "next"
 import { Mail, MapPin, Clock, Calendar } from "lucide-react"
 import Link from "next/link"
 
@@ -8,15 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { siteConfig, skills, contactInfo } from "@/config/site"
 
-export const metadata: Metadata = {
-  title: "About",
-  description: "Learn about my journey as an Applied AI Engineer and full-stack developer.",
-  openGraph: {
-    title: "About | Dev ND",
-    description: "Learn about my journey as an Applied AI Engineer and full-stack developer.",
-    type: "website",
-  },
-}
+//export const metadata: Metadata = {
+//  title: "About",
+  //description: "Learn about my journey as an Applied AI Engineer and full-stack developer.",
+  //openGraph: {
+    //title: "About | Dev ND",
+    //description: "Learn about my journey as an Applied AI Engineer and full-stack developer.",
+    //type: "website",
+  //},
+//}
 
 export default function AboutPage() {
   return (

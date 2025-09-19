@@ -112,13 +112,14 @@ export default async function ProjectDetailPage({ params }: ProjectDetailPagePro
     3
   )
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    }).format(date)
+    }).format(new Date(dateString))
   }
+  
 
   const getStatusIcon = (status: string) => {
     switch (status) {
