@@ -18,6 +18,7 @@
 //Hover Interactions: Smooth transitions and micro-animations
 
 ////
+"use client"
 import Link from "next/link"
 import Image from "next/image"
 import { ArrowRight, Github, ExternalLink, Calendar, Eye } from "lucide-react"
@@ -34,11 +35,11 @@ interface ProjectCardProps {
 }
 
 export function ProjectCard({ project, className, featured = false }: ProjectCardProps) {
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short'
-    }).format(date)
+    }).format(new Date(dateString))
   }
 
   const getStatusColor = (status: string) => {

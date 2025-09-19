@@ -43,8 +43,8 @@ export interface Project {
   demoUrl?: string
   featured: boolean
   published: boolean
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   slug: string
   status: 'completed' | 'in-progress' | 'planning'
   // SEO fields
@@ -66,15 +66,10 @@ export interface Project {
 function transformProjectDoc(doc: any): Project {
   const data = doc.data()
   
-  // Properly handle Firebase Timestamps
-  const createdAt = data.createdAt?.toDate?.() || new Date()
-  const updatedAt = data.updatedAt?.toDate?.() || new Date()
-  
   return {
     id: doc.id,
     title: data.title || '',
     description: data.description || '',
-    longDescription: data.longDescription,
     excerpt: data.excerpt || '',
     featuredImage: data.featuredImage || '',
     images: data.images || [],
@@ -93,9 +88,9 @@ function transformProjectDoc(doc: any): Project {
     solutions: data.solutions,
     learnings: data.learnings,
     metrics: data.metrics || [],
-    // Convert Firebase Timestamps to serializable Date strings
-    createdAt: createdAt,
-    updatedAt: updatedAt,
+    // Convert to ISO strings for serialization
+    createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
+    updatedAt: data.updatedAt?.toDate?.()?.toISOString() || new Date().toISOString(),
   } as Project
 }
 
