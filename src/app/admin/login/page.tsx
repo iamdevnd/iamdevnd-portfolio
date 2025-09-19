@@ -160,14 +160,14 @@ export default function AdminLoginPage() {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 px-0"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={isLoading}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-4 w-4 text-muted-foreground" />
                   )}
                 </Button>
               </div>
@@ -187,16 +187,23 @@ export default function AdminLoginPage() {
                   Signing in...
                 </>
               ) : (
-                "Sign In"
+                "Sign in"
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Need access? Contact the site administrator.
-            </p>
-          </div>
+          
+          {process.env.NODE_ENV === "development" && (
+            <div className="mt-6 p-4 bg-muted rounded-lg">
+              <h4 className="text-sm font-medium mb-2">Development Mode</h4>
+              <p className="text-xs text-muted-foreground mb-2">
+                Use the credentials you created in Firebase Authentication
+              </p>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• Email: {process.env.NEXT_PUBLIC_ADMIN_EMAIL || "Set in .env.local"}</li>
+                <li>• Password: [Your Firebase user password]</li>
+              </ul>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
