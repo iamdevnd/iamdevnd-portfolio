@@ -1,31 +1,8 @@
-//Firebase Admin Configuration Created
-// This server-side configuration provides:
-
-// Secure Credential Handling: Safely decodes base64-encoded service account from environment variables
-// Comprehensive Validation: Validates all required service account fields and format
-// Error Handling: Clear, actionable error messages for debugging
-// Singleton Pattern: Prevents multiple admin app initializations
-// Service Exports: Pre-configured admin Firestore, Auth, and Storage instances
-// Utility Functions: Helper functions for verification and project ID access
-
-// Security Features:
-
-// Environment Variable Based: No hardcoded credentials
-// Base64 Encoding: Secure storage of service account JSON
-// Validation: Ensures complete and valid service account data
-// Error Prevention: Fails fast with clear error messages
-
-// Usage Notes:
-
-// The FIREBASE_SERVICE_ACCOUNT_KEY should be your Firebase service account JSON, base64-encoded
-// This file runs only on the server (API routes, Server Components, Server Actions)
-// All Firebase Admin operations will use these exported services
-
-
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getStorage, Storage } from 'firebase-admin/storage';
+import { serverEnv } from '@/lib/env';
 
 // Service account interface
 interface ServiceAccount {
@@ -45,7 +22,7 @@ interface ServiceAccount {
  * Parse and validate the Firebase service account key from environment variable
  */
 function getServiceAccount(): ServiceAccount {
-  const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  const serviceAccountKey = serverEnv.FIREBASE_SERVICE_ACCOUNT_KEY;
   
   if (!serviceAccountKey) {
     throw new Error(
@@ -60,16 +37,16 @@ function getServiceAccount(): ServiceAccount {
     const serviceAccount = JSON.parse(decodedKey) as ServiceAccount;
     
     // Validate required fields
-    const requiredFields = [
+    const requiredFields: (keyof ServiceAccount)[] = [
       'type',
-      'project_id', 
+      'project_id',
       'private_key_id',
       'private_key',
       'client_email',
-      'client_id'
+      'client_id',
     ];
     
-    const missingFields = requiredFields.filter(field => !serviceAccount[field]);
+    const missingFields = requiredFields.filter((field) => !serviceAccount[field]);
     
     if (missingFields.length > 0) {
       throw new Error(

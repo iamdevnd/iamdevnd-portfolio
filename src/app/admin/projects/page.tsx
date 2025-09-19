@@ -40,13 +40,14 @@ import { cn } from "@/lib/utils"
 async function ProjectsTable() {
   const projects = await getAllProjectsAdmin()
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }).format(date)
-  }
+  // Replace this function in your ProjectsTable component:
+const formatDate = (dateString: string) => {
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }).format(new Date(dateString)) // Convert string to Date first
+}
 
   const getStatusIcon = (status: string) => {
     switch (status) {

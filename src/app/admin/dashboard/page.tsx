@@ -94,10 +94,12 @@ async function DashboardStats() {
 }
 
 // Recent projects component
+// In src/app/admin/dashboard/page.tsx, replace the RecentProjects function:
+
 async function RecentProjects() {
   const allProjects = await getAllProjectsAdmin()
   const recentProjects = allProjects
-    .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()) // Fixed this line
     .slice(0, 5)
 
   return (

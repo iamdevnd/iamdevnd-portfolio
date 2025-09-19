@@ -2,8 +2,7 @@
 //Form Validation: Real-time validation with Zod and React Hook Form
 //Security Features: Password visibility toggle, secure form handling
 //User Experience: Loading states, error handling, auto-redirect
-//Development Helpers: Development mode hints and instructions
-////
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -191,19 +190,6 @@ export default function AdminLoginPage() {
               )}
             </Button>
           </form>
-          
-          {process.env.NODE_ENV === "development" && (
-            <div className="mt-6 p-4 bg-muted rounded-lg">
-              <h4 className="text-sm font-medium mb-2">Development Mode</h4>
-              <p className="text-xs text-muted-foreground mb-2">
-                Use the credentials you created in Firebase Authentication
-              </p>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Email: {process.env.NEXT_PUBLIC_ADMIN_EMAIL || "Set in .env.local"}</li>
-                <li>• Password: [Your Firebase user password]</li>
-              </ul>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
