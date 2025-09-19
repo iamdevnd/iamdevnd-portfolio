@@ -6,202 +6,59 @@
 ////
 "use client"
 
-import { useEffect } from "react"
-import { useRouter, usePathname } from "next/navigation"
-import Link from "next/link"
-import { 
-  LayoutDashboard, 
-  FolderOpen, 
-  FileText, 
-  Settings, 
-  LogOut, 
-  User,
-  Menu,
-  X
-} from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { Eye, EyeOff, Loader2, Lock, Mail } from "lucide-react"
+import { toast } from "sonner"
 
-import { AuthProvider, useAuth } from "@/lib/hooks/use-auth"
+import { useAuth } from "@/lib/hooks/use-auth"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 
-// Navigation items for admin panel
-const adminNavItems = [
-  {
-    title: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    title: "Projects",
-    href: "/admin/projects",
-    icon: FolderOpen,
-  },
-  {
-    title: "Blog Posts",
-    href: "/admin/blog",
-    icon: FileText,
-  },
-  {
-    title: "Settings",
-    href: "/admin/settings",
-    icon: Settings,
-  },
-]
+// Login form validation schema
+const loginSchema = z.object({
+  email: z
+    .string()
+    .email("Please enter a valid email address")
+    .min(1, "Email is required"),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .min(1, "Password is required"),
+})
 
-// Admin sidebar component
-function AdminSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const pathname = usePathname()
-  const { user, signOut } = useAuth()
+type LoginFormData = z.infer<typeof loginSchema>
 
-  return (
-    <>
-      {/* Mobile overlay */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed top-0 left-0 z-50 h-full w-64 bg-background border-r transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:z-0",
-        isOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <Link href="/" className="flex items-center space-x-2">
-              <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                {siteConfig.name}
-              </span>
-            </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="lg:hidden"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* User info */}
-          <div className="p-4 border-b">
-            <div className="flex items-center space-x-3">
-              <div className="h-8 w-8 bg-primary rounded-full flex items-center justify-center">
-                <User className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">
-                  {user?.displayName || "Admin"}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {user?.email}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-2">
-              {adminNavItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href
-                
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={onClose}
-                      className={cn(
-                        "flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t">
-            <Button
-              variant="ghost"
-              onClick={signOut}
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-            >
-              <LogOut className="mr-3 h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </aside>
-    </>
-  )
-}
-
-// Admin header component
-function AdminHeader({ onMenuClick }: { onMenuClick: () => void }) {
-  return (
-    <header className="sticky top-0 z-30 bg-background/95 backdrop-blur border-b">
-      <div className="flex items-center justify-between px-4 h-14">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onMenuClick}
-          className="lg:hidden"
-        >
-          <Menu className="h-4 w-4" />
-        </Button>
-        
-        <div className="hidden lg:block">
-          <h1 className="text-lg font-semibold">Admin Panel</h1>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <Link href="/" target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm">
-              View Site
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-// Protected admin content wrapper
-function AdminContent({ children }: { children: React.ReactNode }) {
+export default function AdminLoginPage() {
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
-  const pathname = usePathname()
-  const { user, loading, isAdmin } = useAuth()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const { user, loading, signIn, isAdmin } = useAuth()
 
-  // Redirect logic
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+    reset,
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onChange",
+  })
+
+  // Redirect if already authenticated
   useEffect(() => {
-    if (loading) return
-
-    // Allow access to login page
-    if (pathname === "/admin/login") return
-
-    // Redirect to login if not authenticated or not admin
-    if (!user || !isAdmin) {
-      router.push("/admin/login")
-      return
+    if (!loading && user && isAdmin) {
+      router.push("/admin/dashboard")
     }
-  }, [user, loading, isAdmin, pathname, router])
+  }, [user, loading, isAdmin, router])
 
-  // Show loading state
+  // Show loading if checking auth state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -210,45 +67,138 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Show login page without admin layout
-  if (pathname === "/admin/login") {
-    return <>{children}</>
+  // If already authenticated and admin, don't show login form
+  if (user && isAdmin) {
+    return null
   }
 
-  // Show access denied if not authorized
-  if (!user || !isAdmin) {
-    return null // Router will handle redirect
-  }
-
-  return (
-    <div className="flex h-screen bg-muted/50">
-      <AdminSidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)} 
-      />
+  const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true)
+    
+    try {
+      const success = await signIn(data.email, data.password)
       
-      <div className="flex-1 flex flex-col overflow-hidden lg:ml-0">
-        <AdminHeader onMenuClick={() => setSidebarOpen(true)} />
-        
-        <main className="flex-1 overflow-y-auto p-4">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
-        </main>
-      </div>
-    </div>
-  )
-}
+      if (success) {
+        toast.success("Welcome back!")
+        router.push("/admin/dashboard")
+      } else {
+        reset({ password: "" })
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      toast.error("An unexpected error occurred. Please try again.")
+      reset({ password: "" })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-// Main admin layout component
-interface AdminLayoutProps {
-  children: React.ReactNode
-}
-
-export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
-    <AuthProvider>
-      <AdminContent>{children}</AdminContent>
-    </AuthProvider>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-muted/50 p-4">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold tracking-tight">
+          {siteConfig.name} Admin
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          Sign in to manage your portfolio
+        </p>
+      </div>
+
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-center">
+            Admin Login
+          </CardTitle>
+          <CardDescription className="text-center">
+            Enter your credentials to access the admin panel
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="admin@example.com"
+                  className={cn(
+                    "pl-10",
+                    errors.email && "border-destructive focus-visible:ring-destructive"
+                  )}
+                  {...register("email")}
+                  disabled={isLoading}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-medium">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className={cn(
+                    "pl-10 pr-10",
+                    errors.password && "border-destructive focus-visible:ring-destructive"
+                  )}
+                  {...register("password")}
+                  disabled={isLoading}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-1 top-1 h-8 w-8 px-0"
+                  onClick={() => setShowPassword(!showPassword)}
+                  disabled={isLoading}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading || !isValid}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Need access? Contact the site administrator.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

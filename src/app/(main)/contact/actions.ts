@@ -7,7 +7,7 @@ import { adminDb } from "@/lib/firebase/admin"
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY)
 
-// Contact form validation schema
+// Contact form validation schema (REMOVED reCAPTCHA)
 const contactFormSchema = z.object({
   name: z
     .string()
@@ -39,8 +39,6 @@ const contactFormSchema = z.object({
   projectType: z
     .enum(["Web Application", "Mobile App", "AI/ML Project", "API Development", "Consulting", "Other"])
     .optional(),
-  // reCAPTCHA token
-  recaptchaToken: z.string().optional(),
 })
 
 // Type for form data
@@ -53,54 +51,34 @@ export type ContactFormResponse = {
   errors?: Record<string, string[]>
 }
 
-// Verify reCAPTCHA token
-async function verifyRecaptcha(token: string): Promise<boolean> {
-  if (!process.env.RECAPTCHA_SECRET_KEY) {
-    console.warn("reCAPTCHA secret key not configured")
-    return true // Allow submission in development
-  }
-
-  try {
-    const response = await fetch("https://www.google.com/recaptcha/api/siteverify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: `secret=${process.env.RECAPTCHA_SECRET_KEY}&response=${token}`,
-    })
-
-    const data = await response.json()
-    return data.success && data.score > 0.5
-  } catch (error) {
-    console.error("reCAPTCHA verification failed:", error)
-    return false
-  }
-}
-
 // Rate limiting check
 async function checkRateLimit(email: string, ip?: string): Promise<boolean> {
   try {
     const now = new Date()
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
 
-    const emailQuery = adminDb
+    // Check submissions in the last hour for this email
+    const emailSubmissions = await adminDb
       .collection("contactSubmissions")
       .where("email", "==", email)
-      .where("createdAt", ">=", oneHourAgo)
+      .where("createdAt", ">", oneHourAgo)
+      .get()
 
-    const emailSnapshot = await emailQuery.get()
-    if (emailSnapshot.size >= 3) {
+    // Allow up to 3 submissions per email per hour
+    if (emailSubmissions.size >= 3) {
       return false
     }
 
+    // If IP is available, check IP-based rate limiting
     if (ip) {
-      const ipQuery = adminDb
+      const ipSubmissions = await adminDb
         .collection("contactSubmissions")
         .where("ipAddress", "==", ip)
-        .where("createdAt", ">=", oneHourAgo)
+        .where("createdAt", ">", oneHourAgo)
+        .get()
 
-      const ipSnapshot = await ipQuery.get()
-      if (ipSnapshot.size >= 5) {
+      // Allow up to 5 submissions per IP per hour
+      if (ipSubmissions.size >= 5) {
         return false
       }
     }
@@ -108,39 +86,38 @@ async function checkRateLimit(email: string, ip?: string): Promise<boolean> {
     return true
   } catch (error) {
     console.error("Rate limit check failed:", error)
-    return true
+    return true // Allow submission if rate limiting fails
   }
 }
 
-// Save submission
-async function saveSubmission(data: ContactFormData, metadata: any) {
+// Save submission to Firestore
+async function saveSubmission(
+  data: ContactFormData,
+  metadata: {
+    userAgent?: FormDataEntryValue | null
+    ipAddress?: FormDataEntryValue | null
+    source: string
+  }
+): Promise<void> {
   try {
-    const submissionData = {
+    await adminDb.collection("contactSubmissions").add({
       ...data,
       ...metadata,
       createdAt: new Date(),
-      status: "unread",
-    }
-
-    await adminDb.collection("contactSubmissions").add(submissionData)
+      status: "new",
+    })
   } catch (error) {
-    console.error("Failed to save submission:", error)
+    console.error("Failed to save contact submission:", error)
+    // Don't throw error - email is more important than database save
   }
 }
 
 // Send notification email (TO YOU)
 async function sendNotificationEmail(data: ContactFormData): Promise<boolean> {
-  if (!process.env.RESEND_API_KEY) {
-    console.error("Resend API key not configured")
-    return false
-  }
-
   try {
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
-          New Contact Form Submission
-        </h2>
+        <h2 style="color: #2563eb;">New Contact Form Submission</h2>
         
         <div style="background-color: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0; color: #374151;">Contact Information</h3>
@@ -192,8 +169,8 @@ Time: ${new Date().toLocaleString()}
     `
 
     await resend.emails.send({
-      from: "Portfolio Contact <portfolio@iamdevnd.dev>", // ✅ Updated
-      to: ["iamdevnd@gmail.com"], // ✅ Updated
+      from: "Portfolio Contact <portfolio@iamdevnd.dev>",
+      to: ["iamdevnd@gmail.com"], // ✅ Update this to your actual email
       replyTo: data.email,
       subject: `New Contact: ${data.subject}`,
       html: emailHtml,
@@ -231,7 +208,7 @@ async function sendConfirmationEmail(data: ContactFormData): Promise<boolean> {
     `
 
     await resend.emails.send({
-      from: "Dev ND <portfolio@iamdevnd.dev>", // ✅ Updated
+      from: "Dev ND <portfolio@iamdevnd.dev>",
       to: [data.email],
       subject: "Thanks for reaching out!",
       html: confirmationHtml,
@@ -258,7 +235,7 @@ export async function submitContactForm(
       budget: formData.get("budget") as string,
       timeline: formData.get("timeline") as string,
       projectType: formData.get("projectType") as string,
-      recaptchaToken: formData.get("recaptchaToken") as string,
+      // ✅ REMOVED: recaptchaToken: formData.get("recaptchaToken") as string,
     }
 
     const validationResult = contactFormSchema.safeParse(rawData)
@@ -272,15 +249,7 @@ export async function submitContactForm(
 
     const data = validationResult.data
 
-    if (data.recaptchaToken) {
-      const recaptchaValid = await verifyRecaptcha(data.recaptchaToken)
-      if (!recaptchaValid) {
-        return {
-          success: false,
-          message: "reCAPTCHA verification failed. Please try again.",
-        }
-      }
-    }
+    // ✅ REMOVED: reCAPTCHA verification block
 
     const rateLimitOk = await checkRateLimit(data.email)
     if (!rateLimitOk) {
