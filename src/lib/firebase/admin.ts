@@ -86,7 +86,7 @@ function initializeFirebaseAdmin(): App {
     
     // Initialize admin app with service account
     const app = initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert(serviceAccount as any),
       projectId: serviceAccount.project_id,
       storageBucket: `${serviceAccount.project_id}.appspot.com`,
     });
