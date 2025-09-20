@@ -63,9 +63,9 @@ const projectFormSchema = z.object({
   featuredImage: z
     .string()
     .url("Please enter a valid image URL"),
-  images: z
+    images: z
     .array(z.string().url("Please enter valid image URLs"))
-    .optional(),
+    .default([]),
   githubUrl: z
     .string()
     .url("Please enter a valid GitHub URL")
@@ -156,7 +156,7 @@ export default function NewProjectPage() {
   })
 
   const { fields: imageFields, append: appendImage, remove: removeImage } = useFieldArray({
-    control,
+    control: control as any,
     name: "images",
   })
 
