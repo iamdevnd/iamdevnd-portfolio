@@ -1,21 +1,7 @@
-// scripts/add-sample-data.js (use .js extension for easier execution)
-// Make sure you have your .env.local file with Firebase credentials
+// scripts/add-sample-data.ts
+// Run this script to populate your database with sample projects
 
-const admin = require('firebase-admin');
-
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(
-    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf-8')
-  );
-  
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    projectId: serviceAccount.project_id
-  });
-}
-
-const db = admin.firestore();
+import { adminDb } from '../src/lib/firebase/admin'
 
 const sampleProjects = [
   {
@@ -111,44 +97,36 @@ const sampleProjects = [
 ];
 
 async function addSampleProjects() {
-  console.log('Starting to add sample projects...');
-  
   try {
-    for (let i = 0; i < sampleProjects.length; i++) {
-      const project = sampleProjects[i];
+    console.log('Starting to add sample projects...');
+    
+    for (const project of sampleProjects) {
       const projectData = {
         ...project,
-        createdAt: admin.firestore.Timestamp.now(),
-        updatedAt: admin.firestore.Timestamp.now(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       
-      const docRef = await db.collection('projects').add(projectData);
-      console.log(`✅ Added project ${i + 1}: ${project.title}`);
-      console.log(`   Document ID: ${docRef.id}`);
+      const docRef = await adminDb.collection('projects').add(projectData);
+      console.log(`Added project: ${project.title} with ID: ${docRef.id}`);
     }
     
-    console.log('\n🎉 Successfully added all sample projects!');
-    console.log('You should now see these projects in your portfolio.');
-    
+    console.log('Successfully added all sample projects!');
   } catch (error) {
-    console.error('❌ Error adding sample projects:', error);
-    
-    if (error.message.includes('FIREBASE_SERVICE_ACCOUNT_KEY')) {
-      console.log('\n💡 Make sure you have FIREBASE_SERVICE_ACCOUNT_KEY in your .env.local file');
-    }
+    console.error('Error adding sample projects:', error);
   }
 }
 
-// Load environment variables
-require('dotenv').config({ path: '.env.local' });
-
 // Run the script
-addSampleProjects()
-  .then(() => {
-    console.log('\n✨ Script completed successfully!');
-    process.exit(0);
-  })
-  .catch((error) => {
-    console.error('\n💥 Script failed:', error);
-    process.exit(1);
-  });
+addSampleProjects().then(() => {
+  console.log('Script completed');
+  process.exit(0);
+}).catch((error) => {
+  console.error('Script failed:', error);
+  process.exit(1);
+});
+
+// To run this script:
+// 1. Save this file as scripts/add-sample-data.ts
+// 2. Compile and run: npx tsx scripts/add-sample-data.ts
+// OR add this as an admin page action
