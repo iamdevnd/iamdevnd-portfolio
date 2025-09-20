@@ -50,6 +50,9 @@ export type ProjectFormResponse = {
 /**
  * Create a new project
  */
+// Fix for src/app/(admin)/actions/projects.ts
+// Replace the createProjectAction function with this version:
+
 export async function createProjectAction(formData: FormData): Promise<ProjectFormResponse> {
   try {
     // Extract and parse form data
@@ -63,7 +66,7 @@ export async function createProjectAction(formData: FormData): Promise<ProjectFo
       status: formData.get("status") as "completed" | "in-progress" | "planning",
       technologies: JSON.parse(formData.get("technologies") as string || "[]"),
       featuredImage: formData.get("featuredImage") as string,
-      images: JSON.parse(formData.get("images") as string || "[]"),
+      images: JSON.parse(formData.get("images") as string || "[]"), // This will always be an array
       githubUrl: formData.get("githubUrl") as string,
       liveUrl: formData.get("liveUrl") as string,
       demoUrl: formData.get("demoUrl") as string,
@@ -90,8 +93,14 @@ export async function createProjectAction(formData: FormData): Promise<ProjectFo
 
     const data = validationResult.data
 
+    // Ensure images is always an array (fix the TypeScript error)
+    const projectData = {
+      ...data,
+      images: data.images || [], // Convert undefined to empty array
+    }
+
     // Create the project
-    const projectId = await createProject(data)
+    const projectId = await createProject(projectData)
 
     // Revalidate relevant paths
     revalidatePath("/admin/projects")
@@ -116,6 +125,9 @@ export async function createProjectAction(formData: FormData): Promise<ProjectFo
 /**
  * Update an existing project
  */
+// Fix for src/app/(admin)/actions/projects.ts
+// Replace the updateProjectAction function with this version:
+
 export async function updateProjectAction(
   projectId: string, 
   formData: FormData
@@ -159,8 +171,14 @@ export async function updateProjectAction(
 
     const data = validationResult.data
 
+    // Ensure images is always an array (fix the TypeScript error)
+    const projectData = {
+      ...data,
+      images: data.images || [], // Convert undefined to empty array
+    }
+
     // Update the project
-    await updateProject(projectId, data)
+    await updateProject(projectId, projectData)
 
     // Revalidate relevant paths
     revalidatePath("/admin/projects")
