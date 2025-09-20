@@ -178,7 +178,7 @@ export function ProjectEditForm({ project }: ProjectEditFormProps) {
   })
 
   const { fields: imageFields, append: appendImage, remove: removeImage } = useFieldArray({
-    control,
+    control: control as any,
     name: "images",
   })
 
