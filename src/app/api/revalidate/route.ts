@@ -24,12 +24,14 @@ export async function POST(request: NextRequest) {
       console.log(`✅ Revalidated tag: ${tag}`)
     }
 
-    // If no specific path or tag, revalidate all project-related pages
+    // If no specific path or tag, revalidate all content pages
     if (!path && !tag) {
       revalidatePath('/', 'layout') // Revalidate everything
       revalidatePath('/projects')
       revalidatePath('/projects/[slug]', 'page')
-      console.log('✅ Revalidated all project pages')
+      revalidatePath('/blog')
+      revalidatePath('/blog/[slug]', 'page')
+      console.log('✅ Revalidated all content pages')
     }
 
     return NextResponse.json({ 
@@ -64,14 +66,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: `Revalidated tag: ${tag}` })
     }
 
-    // Default: revalidate all project pages
+    // Default: revalidate all content pages
     revalidatePath('/', 'layout')
     revalidatePath('/projects')
     revalidatePath('/projects/[slug]', 'page')
+    revalidatePath('/blog')
+    revalidatePath('/blog/[slug]', 'page')
 
     return NextResponse.json({ 
-      message: 'Revalidated all project pages',
-      revalidated: ['/', '/projects', '/projects/[slug]']
+      message: 'Revalidated all content pages',
+      revalidated: ['/', '/projects', '/projects/[slug]', '/blog', '/blog/[slug]']
     })
 
   } catch (error) {

@@ -377,3 +377,80 @@ export async function revalidateProjects() {
     console.error('❌ Error revalidating projects:', error)
   }
 }
+
+// ADMIN MUTATIONS (uncached)
+export async function createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  try {
+    const now = new Date()
+    const docRef = await adminDb.collection('projects').add({
+      ...projectData,
+      createdAt: now,
+      updatedAt: now,
+    })
+    return docRef.id
+  } catch (error) {
+    console.error('Error creating project:', error)
+    throw new Error('Failed to create project')
+  }
+}
+
+export async function updateProject(
+  id: string,
+  projectData: Partial<Omit<Project, 'id' | 'createdAt'>>
+): Promise<void> {
+  try {
+    const ref = adminDb.collection('projects').doc(id)
+    const snapshot = await ref.get()
+    if (!snapshot.exists) throw new Error('Project not found')
+    const now = new Date()
+    await ref.update({ ...projectData, updatedAt: now })
+  } catch (error) {
+    console.error('Error updating project:', error)
+    throw new Error('Failed to update project')
+  }
+}
+
+export async function deleteProject(id: string): Promise<void> {
+  try {
+    const ref = adminDb.collection('projects').doc(id)
+    await ref.delete()
+  } catch (error) {
+    console.error('Error deleting project:', error)
+    throw new Error('Failed to delete project')
+  }
+}
+
+export async function toggleProjectPublished(id: string): Promise<void> {
+  try {
+    const ref = adminDb.collection('projects').doc(id)
+    const snapshot = await ref.get()
+    if (!snapshot.exists) throw new Error('Project not found')
+    const data = snapshot.data() || {}
+    const willBePublished = !data.published
+    const now = new Date()
+    await ref.update({
+      published: willBePublished,
+      updatedAt: now,
+    })
+  } catch (error) {
+    console.error('Error toggling project published:', error)
+    throw new Error('Failed to toggle project')
+  }
+}
+
+export async function toggleProjectFeatured(id: string): Promise<void> {
+  try {
+    const ref = adminDb.collection('projects').doc(id)
+    const snapshot = await ref.get()
+    if (!snapshot.exists) throw new Error('Project not found')
+    const data = snapshot.data() || {}
+    const now = new Date()
+    await ref.update({
+      featured: !data.featured,
+      updatedAt: now,
+    })
+  } catch (error) {
+    console.error('Error toggling project featured:', error)
+    throw new Error('Failed to toggle featured')
+  }
+}
