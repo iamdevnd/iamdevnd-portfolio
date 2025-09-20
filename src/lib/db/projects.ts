@@ -24,8 +24,9 @@
 //- published (Ascending) + featured (Ascending) + createdAt (Descending)
 //- published (Ascending) + category (Ascending) + createdAt (Descending)
 ////
+// src/lib/db/projects.ts - UPDATED VERSION
 import { adminDb } from "@/lib/firebase/admin"
-import { cache } from "react"
+import { unstable_cache } from 'next/cache'
 
 // Project type definition
 export interface Project {
@@ -62,7 +63,6 @@ export interface Project {
 }
 
 // Transform Firestore document to Project type
-// Transform Firestore document to Project type
 function transformProjectDoc(doc: any): Project {
   const data = doc.data()
   
@@ -87,6 +87,7 @@ function transformProjectDoc(doc: any): Project {
     challenges: data.challenges,
     solutions: data.solutions,
     learnings: data.learnings,
+    longDescription: data.longDescription,
     metrics: data.metrics || [],
     // Convert to ISO strings for serialization
     createdAt: data.createdAt?.toDate?.()?.toISOString() || new Date().toISOString(),
@@ -96,183 +97,225 @@ function transformProjectDoc(doc: any): Project {
 
 /**
  * Get all published projects
- * Cached for performance in production
+ * Cached with tags for selective revalidation
  */
-export const getAllProjects = cache(async (): Promise<Project[]> => {
-  try {
-    const projectsRef = adminDb.collection('projects')
-    const snapshot = await projectsRef
-      .where('published', '==', true)
-      .orderBy('createdAt', 'desc')
-      .get()
+export const getAllProjects = unstable_cache(
+  async (): Promise<Project[]> => {
+    try {
+      const projectsRef = adminDb.collection('projects')
+      const snapshot = await projectsRef
+        .where('published', '==', true)
+        .orderBy('createdAt', 'desc')
+        .get()
 
-    if (snapshot.empty) {
+      if (snapshot.empty) {
+        return []
+      }
+
+      return snapshot.docs.map(transformProjectDoc)
+    } catch (error) {
+      console.error('Error fetching projects:', error)
       return []
     }
-
-    return snapshot.docs.map(transformProjectDoc)
-  } catch (error) {
-    console.error('Error fetching projects:', error)
-    return []
+  },
+  ['all-projects'],
+  {
+    tags: ['projects'],
+    revalidate: 60 // Cache for 1 minute, but can be revalidated on demand
   }
-})
+)
 
 /**
  * Get featured projects for homepage
  * Limited to 3-4 most important projects
  */
-export const getFeaturedProjects = cache(async (): Promise<Project[]> => {
-  try {
-    const projectsRef = adminDb.collection('projects')
-    const snapshot = await projectsRef
-      .where('published', '==', true)
-      .where('featured', '==', true)
-      .orderBy('createdAt', 'desc')
-      .limit(4)
-      .get()
+export const getFeaturedProjects = unstable_cache(
+  async (): Promise<Project[]> => {
+    try {
+      const projectsRef = adminDb.collection('projects')
+      const snapshot = await projectsRef
+        .where('published', '==', true)
+        .where('featured', '==', true)
+        .orderBy('createdAt', 'desc')
+        .limit(4)
+        .get()
 
-    if (snapshot.empty) {
+      if (snapshot.empty) {
+        return []
+      }
+
+      return snapshot.docs.map(transformProjectDoc)
+    } catch (error) {
+      console.error('Error fetching featured projects:', error)
       return []
     }
-
-    return snapshot.docs.map(transformProjectDoc)
-  } catch (error) {
-    console.error('Error fetching featured projects:', error)
-    return []
+  },
+  ['featured-projects'],
+  {
+    tags: ['projects', 'featured-projects'],
+    revalidate: 60
   }
-})
+)
 
 /**
  * Get a single project by slug
  * Used for project detail pages
  */
-export const getProjectBySlug = cache(async (slug: string): Promise<Project | null> => {
-  try {
-    const projectsRef = adminDb.collection('projects')
-    const snapshot = await projectsRef
-      .where('slug', '==', slug)
-      .where('published', '==', true)
-      .limit(1)
-      .get()
+export const getProjectBySlug = unstable_cache(
+  async (slug: string): Promise<Project | null> => {
+    try {
+      const projectsRef = adminDb.collection('projects')
+      const snapshot = await projectsRef
+        .where('slug', '==', slug)
+        .where('published', '==', true)
+        .limit(1)
+        .get()
 
-    if (snapshot.empty) {
+      if (snapshot.empty) {
+        return null
+      }
+
+      return transformProjectDoc(snapshot.docs[0])
+    } catch (error) {
+      console.error('Error fetching project by slug:', error)
       return null
     }
-
-    return transformProjectDoc(snapshot.docs[0])
-  } catch (error) {
-    console.error('Error fetching project by slug:', error)
-    return null
+  },
+  ['project-by-slug'],
+  {
+    tags: ['projects'],
+    revalidate: 300 // Cache for 5 minutes for individual projects
   }
-})
+)
 
 /**
  * Get projects by category
  * For filtering on projects page
  */
-export const getProjectsByCategory = cache(async (category: string): Promise<Project[]> => {
-  try {
-    const projectsRef = adminDb.collection('projects')
-    let query = projectsRef.where('published', '==', true)
-    
-    if (category !== 'All') {
-      query = query.where('category', '==', category)
-    }
-    
-    const snapshot = await query
-      .orderBy('createdAt', 'desc')
-      .get()
+export const getProjectsByCategory = unstable_cache(
+  async (category: string): Promise<Project[]> => {
+    try {
+      const projectsRef = adminDb.collection('projects')
+      let query = projectsRef.where('published', '==', true)
+      
+      if (category !== 'All') {
+        query = query.where('category', '==', category)
+      }
+      
+      const snapshot = await query
+        .orderBy('createdAt', 'desc')
+        .get()
 
-    if (snapshot.empty) {
+      if (snapshot.empty) {
+        return []
+      }
+
+      return snapshot.docs.map(transformProjectDoc)
+    } catch (error) {
+      console.error('Error fetching projects by category:', error)
       return []
     }
-
-    return snapshot.docs.map(transformProjectDoc)
-  } catch (error) {
-    console.error('Error fetching projects by category:', error)
-    return []
+  },
+  ['projects-by-category'],
+  {
+    tags: ['projects'],
+    revalidate: 60
   }
-})
+)
 
 /**
  * Get related projects based on similar technologies or category
  * Used on project detail pages
  */
-export const getRelatedProjects = cache(async (
-  currentProjectId: string, 
-  technologies: string[], 
-  category: string,
-  limit: number = 3
-): Promise<Project[]> => {
-  try {
-    const projectsRef = adminDb.collection('projects')
-    
-    // First try to find projects with similar technologies
-    const snapshot = await projectsRef
-      .where('published', '==', true)
-      .where('category', '==', category)
-      .orderBy('createdAt', 'desc')
-      .get()
+export const getRelatedProjects = unstable_cache(
+  async (
+    currentProjectId: string, 
+    technologies: string[], 
+    category: string,
+    limit: number = 3
+  ): Promise<Project[]> => {
+    try {
+      const projectsRef = adminDb.collection('projects')
+      
+      // First try to find projects with similar technologies
+      const snapshot = await projectsRef
+        .where('published', '==', true)
+        .where('category', '==', category)
+        .orderBy('createdAt', 'desc')
+        .get()
 
-    if (snapshot.empty) {
+      if (snapshot.empty) {
+        return []
+      }
+
+      const allProjects = snapshot.docs.map(transformProjectDoc)
+      
+      // Filter out current project and calculate relevance score
+      const relatedProjects = allProjects
+        .filter(project => project.id !== currentProjectId)
+        .map(project => {
+          // Calculate similarity score based on common technologies
+          const commonTechs = project.technologies.filter(tech => 
+            technologies.includes(tech)
+          ).length
+          
+          return {
+            ...project,
+            relevanceScore: commonTechs
+          }
+        })
+        .sort((a, b) => b.relevanceScore - a.relevanceScore)
+        .slice(0, limit)
+
+      // Remove the relevanceScore property before returning
+      return relatedProjects.map(({ relevanceScore, ...project }) => project)
+    } catch (error) {
+      console.error('Error fetching related projects:', error)
       return []
     }
-
-    const allProjects = snapshot.docs.map(transformProjectDoc)
-    
-    // Filter out current project and calculate relevance score
-    const relatedProjects = allProjects
-      .filter(project => project.id !== currentProjectId)
-      .map(project => {
-        // Calculate similarity score based on common technologies
-        const commonTechs = project.technologies.filter(tech => 
-          technologies.includes(tech)
-        ).length
-        
-        return {
-          ...project,
-          relevanceScore: commonTechs
-        }
-      })
-      .sort((a, b) => b.relevanceScore - a.relevanceScore)
-      .slice(0, limit)
-
-    // Remove the relevanceScore property before returning
-    return relatedProjects.map(({ relevanceScore, ...project }) => project)
-  } catch (error) {
-    console.error('Error fetching related projects:', error)
-    return []
+  },
+  ['related-projects'],
+  {
+    tags: ['projects'],
+    revalidate: 300
   }
-})
+)
 
 /**
  * Get project slugs for static generation
  * Used in generateStaticParams
  */
-export const getAllProjectSlugs = cache(async (): Promise<string[]> => {
-  try {
-    const projectsRef = adminDb.collection('projects')
-    const snapshot = await projectsRef
-      .where('published', '==', true)
-      .select('slug')
-      .get()
+export const getAllProjectSlugs = unstable_cache(
+  async (): Promise<string[]> => {
+    try {
+      const projectsRef = adminDb.collection('projects')
+      const snapshot = await projectsRef
+        .where('published', '==', true)
+        .select('slug')
+        .get()
 
-    if (snapshot.empty) {
+      if (snapshot.empty) {
+        return []
+      }
+
+      return snapshot.docs.map(doc => doc.data().slug).filter(Boolean)
+    } catch (error) {
+      console.error('Error fetching project slugs:', error)
       return []
     }
-
-    return snapshot.docs.map(doc => doc.data().slug).filter(Boolean)
-  } catch (error) {
-    console.error('Error fetching project slugs:', error)
-    return []
+  },
+  ['project-slugs'],
+  {
+    tags: ['projects'],
+    revalidate: 300
   }
-})
+)
 
 /**
  * Admin function: Get all projects (including unpublished)
- * Used in admin panel
+ * NOT CACHED - Always fresh data for admin
  */
-export const getAllProjectsAdmin = cache(async (): Promise<Project[]> => {
+export const getAllProjectsAdmin = async (): Promise<Project[]> => {
   try {
     const projectsRef = adminDb.collection('projects')
     const snapshot = await projectsRef
@@ -288,15 +331,13 @@ export const getAllProjectsAdmin = cache(async (): Promise<Project[]> => {
     console.error('Error fetching all projects (admin):', error)
     return []
   }
-})
-
-// Add these functions to your existing src/lib/db/projects.ts file
+}
 
 /**
  * Get a single project by ID (admin function)
- * Used for editing projects in admin panel
+ * NOT CACHED - Always fresh data for admin
  */
-export const getProjectByIdAdmin = cache(async (id: string): Promise<Project | null> => {
+export const getProjectByIdAdmin = async (id: string): Promise<Project | null> => {
   try {
     const projectRef = adminDb.collection('projects').doc(id)
     const doc = await projectRef.get()
@@ -307,150 +348,32 @@ export const getProjectByIdAdmin = cache(async (id: string): Promise<Project | n
 
     return transformProjectDoc(doc)
   } catch (error) {
-    console.error('Error fetching project by ID:', error)
+    console.error('Error fetching project by ID (admin):', error)
     return null
   }
-})
-
-/**
- * Create a new project
- * Used in admin panel project creation
- */
-export async function createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-  try {
-    const now = new Date()
-    const newProject = {
-      ...projectData,
-      createdAt: now,
-      updatedAt: now,
-    }
-
-    const docRef = await adminDb.collection('projects').add(newProject)
-    return docRef.id
-  } catch (error) {
-    console.error('Error creating project:', error)
-    throw new Error('Failed to create project')
-  }
 }
 
 /**
- * Update an existing project
- * Used in admin panel project editing
+ * Utility function to trigger revalidation after project changes
  */
-export async function updateProject(id: string, projectData: Partial<Omit<Project, 'id' | 'createdAt'>>): Promise<void> {
+export async function revalidateProjects() {
   try {
-    const projectRef = adminDb.collection('projects').doc(id)
-    
-    // Check if project exists
-    const doc = await projectRef.get()
-    if (!doc.exists) {
-      throw new Error('Project not found')
-    }
-
-    const updatedProject = {
-      ...projectData,
-      updatedAt: new Date(),
-    }
-
-    await projectRef.update(updatedProject)
-  } catch (error) {
-    console.error('Error updating project:', error)
-    throw new Error('Failed to update project')
-  }
-}
-
-/**
- * Delete a project
- * Used in admin panel project management
- */
-export async function deleteProject(id: string): Promise<void> {
-  try {
-    const projectRef = adminDb.collection('projects').doc(id)
-    
-    // Check if project exists
-    const doc = await projectRef.get()
-    if (!doc.exists) {
-      throw new Error('Project not found')
-    }
-
-    await projectRef.delete()
-  } catch (error) {
-    console.error('Error deleting project:', error)
-    throw new Error('Failed to delete project')
-  }
-}
-
-/**
- * Toggle project published status
- * Quick action for admin panel
- */
-export async function toggleProjectPublished(id: string): Promise<void> {
-  try {
-    const projectRef = adminDb.collection('projects').doc(id)
-    const doc = await projectRef.get()
-    
-    if (!doc.exists) {
-      throw new Error('Project not found')
-    }
-
-    const currentData = doc.data()
-    await projectRef.update({
-      published: !currentData?.published,
-      updatedAt: new Date(),
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/revalidate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tag: 'projects'
+      }),
     })
-  } catch (error) {
-    console.error('Error toggling project published status:', error)
-    throw new Error('Failed to toggle project status')
-  }
-}
 
-/**
- * Toggle project featured status
- * Quick action for admin panel
- */
-export async function toggleProjectFeatured(id: string): Promise<void> {
-  try {
-    const projectRef = adminDb.collection('projects').doc(id)
-    const doc = await projectRef.get()
-    
-    if (!doc.exists) {
-      throw new Error('Project not found')
+    if (!response.ok) {
+      throw new Error('Failed to revalidate')
     }
 
-    const currentData = doc.data()
-    await projectRef.update({
-      featured: !currentData?.featured,
-      updatedAt: new Date(),
-    })
+    console.log('✅ Projects revalidated successfully')
   } catch (error) {
-    console.error('Error toggling project featured status:', error)
-    throw new Error('Failed to toggle project featured status')
-  }
-}
-
-/**
- * Bulk update project statuses
- * For admin operations
- */
-export async function bulkUpdateProjects(
-  projectIds: string[], 
-  updates: Partial<Pick<Project, 'published' | 'featured' | 'status'>>
-): Promise<void> {
-  try {
-    const batch = adminDb.batch()
-    const now = new Date()
-
-    for (const id of projectIds) {
-      const projectRef = adminDb.collection('projects').doc(id)
-      batch.update(projectRef, {
-        ...updates,
-        updatedAt: now,
-      })
-    }
-
-    await batch.commit()
-  } catch (error) {
-    console.error('Error bulk updating projects:', error)
-    throw new Error('Failed to bulk update projects')
+    console.error('❌ Error revalidating projects:', error)
   }
 }

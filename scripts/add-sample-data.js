@@ -1,22 +1,53 @@
-// scripts/add-sample-data.js (use .js extension for easier execution)
-// Make sure you have your .env.local file with Firebase credentials
+// scripts/add-sample-data.js
+const path = require('path');
+
+// Explicitly load .env.local from project root
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+
+console.log('🔍 Environment Debug:');
+console.log('Current directory:', __dirname);
+console.log('Looking for .env.local at:', path.join(__dirname, '..', '.env.local'));
+console.log('Project ID:', process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID);
+console.log('Service Account Key exists:', !!process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+console.log('Service Account Key length:', process.env.FIREBASE_SERVICE_ACCOUNT_KEY?.length || 0);
+console.log('');
 
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(
-    Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_KEY, 'base64').toString('utf-8')
-  );
-  
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    projectId: serviceAccount.project_id
-  });
+  try {
+    const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    
+    if (!serviceAccountKey) {
+      console.error('❌ FIREBASE_SERVICE_ACCOUNT_KEY not found');
+      console.error('Available env vars:', Object.keys(process.env).filter(key => key.includes('FIREBASE')));
+      process.exit(1);
+    }
+
+    console.log('🔍 Decoding service account...');
+    const decodedKey = Buffer.from(serviceAccountKey, 'base64').toString('utf-8');
+    const serviceAccount = JSON.parse(decodedKey);
+
+    console.log('✅ Service account decoded successfully');
+    console.log('Project ID from service account:', serviceAccount.project_id);
+    console.log('Client email:', serviceAccount.client_email);
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      projectId: serviceAccount.project_id,
+    });
+
+    console.log('✅ Firebase Admin initialized successfully');
+  } catch (error) {
+    console.error('❌ Firebase initialization error:', error.message);
+    process.exit(1);
+  }
 }
 
 const db = admin.firestore();
 
+// Sample projects data
 const sampleProjects = [
   {
     title: "ContextCache - LLM Memory Engine",
@@ -138,9 +169,6 @@ async function addSampleProjects() {
     }
   }
 }
-
-// Load environment variables
-require('dotenv').config({ path: '.env.local' });
 
 // Run the script
 addSampleProjects()
