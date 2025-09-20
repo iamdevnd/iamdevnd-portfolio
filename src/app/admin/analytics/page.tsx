@@ -1,9 +1,12 @@
-// src/app/admin/analytics/page.tsx - FIXED VERSION
+// src/app/admin/analytics/page.tsx - UPDATED for Environment Variable
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Download, ExternalLink, TrendingUp, Users, Eye, MessageSquare, Globe, Zap } from "lucide-react"
 
 export default function AdminAnalyticsPage() {
+  // Get GA ID from environment
+  const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "Not configured"
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -15,9 +18,9 @@ export default function AdminAnalyticsPage() {
         </div>
         <div className="flex gap-2">
           <Button variant="outline" asChild>
-            <a 
-              href="https://analytics.google.com/analytics/web/#/p413949856/reports/intelligenthome" 
-              target="_blank" 
+            <a
+              href="https://analytics.google.com/analytics/web/#/p413949856/reports/intelligenthome"
+              target="_blank"
               rel="noopener noreferrer"
             >
               <ExternalLink className="mr-2 h-4 w-4" />
@@ -31,6 +34,27 @@ export default function AdminAnalyticsPage() {
         </div>
       </div>
 
+      {/* Analytics Status */}
+      <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+        <CardHeader>
+          <CardTitle className="text-green-800 dark:text-green-200">Analytics Configuration</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
+            <p>Your Google Analytics configuration:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>Measurement ID: {GA_ID}</li>
+              <li>Data collection: {GA_ID !== "Not configured" ? "Active" : "Inactive"}</li>
+              <li>Real-time tracking: {GA_ID !== "Not configured" ? "Enabled" : "Disabled"}</li>
+              <li>Configuration: Environment Variable</li>
+            </ul>
+            <p className="mt-4">
+              <strong>Note:</strong> Data may take 24-48 hours to appear in reports after setup.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Overview Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -40,9 +64,7 @@ export default function AdminAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12,345</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
 
@@ -53,9 +75,7 @@ export default function AdminAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">2,350</div>
-            <p className="text-xs text-muted-foreground">
-              +15% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+15% from last month</p>
           </CardContent>
         </Card>
 
@@ -66,9 +86,7 @@ export default function AdminAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">4,321</div>
-            <p className="text-xs text-muted-foreground">
-              +12% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+12% from last month</p>
           </CardContent>
         </Card>
 
@@ -79,9 +97,7 @@ export default function AdminAnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">
-              +4 from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+4 from last month</p>
           </CardContent>
         </Card>
       </div>
@@ -100,16 +116,13 @@ export default function AdminAnalyticsPage() {
                 { page: "/projects", views: "1,876", percentage: "20%" },
                 { page: "/about", views: "1,234", percentage: "15%" },
                 { page: "/projects/contextcache-llm-memory-engine", views: "876", percentage: "12%" },
-                { page: "/contact", views: "543", percentage: "8%" }
+                { page: "/contact", views: "543", percentage: "8%" },
               ].map((item, index) => (
                 <div key={index} className="flex items-center justify-between">
                   <div className="flex-1">
                     <p className="text-sm font-medium">{item.page}</p>
                     <div className="w-full bg-muted rounded-full h-1.5 mt-1">
-                      <div 
-                        className="bg-primary h-1.5 rounded-full" 
-                        style={{ width: item.percentage }}
-                      />
+                      <div className="bg-primary h-1.5 rounded-full" style={{ width: item.percentage }} />
                     </div>
                   </div>
                   <div className="ml-4 text-sm font-medium">{item.views}</div>
@@ -132,7 +145,7 @@ export default function AdminAnalyticsPage() {
                 { source: "Google Search", visitors: "876", icon: Zap, color: "bg-green-500" },
                 { source: "GitHub", visitors: "543", icon: MessageSquare, color: "bg-purple-500" },
                 { source: "LinkedIn", visitors: "321", icon: Users, color: "bg-orange-500" },
-                { source: "Twitter", visitors: "234", icon: TrendingUp, color: "bg-pink-500" }
+                { source: "Twitter", visitors: "234", icon: TrendingUp, color: "bg-pink-500" },
               ].map((item, index) => {
                 const Icon = item.icon
                 return (
@@ -260,27 +273,6 @@ export default function AdminAnalyticsPage() {
               <div className="text-2xl font-bold">38%</div>
               <p className="text-sm text-muted-foreground">Returning Visitors</p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Analytics Status */}
-      <Card className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-        <CardHeader>
-          <CardTitle className="text-green-800 dark:text-green-200">Analytics Active</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2 text-sm text-green-700 dark:text-green-300">
-            <p>Your Google Analytics is properly configured:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Measurement ID: G-41JVCPJ29P</li>
-              <li>Data collection: Active</li>
-              <li>Real-time tracking: Enabled</li>
-              <li>Firebase Analytics: Integrated</li>
-            </ul>
-            <p className="mt-4">
-              <strong>Note:</strong> Data may take 24-48 hours to appear in reports after setup.
-            </p>
           </div>
         </CardContent>
       </Card>

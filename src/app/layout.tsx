@@ -1,4 +1,4 @@
-// src/app/layout.tsx - COMPLETE ROOT LAYOUT
+// src/app/layout.tsx - SECURE VERSION with Environment Variable
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import Script from "next/script"
@@ -7,7 +7,7 @@ import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
 })
@@ -17,7 +17,8 @@ export const metadata: Metadata = {
     default: "Dev ND - Applied AI Engineer",
     template: "%s | Dev ND",
   },
-  description: "Applied AI Engineer specializing in Next.js, Python, and cutting-edge AI solutions. Building production-grade applications with modern technologies.",
+  description:
+    "Applied AI Engineer specializing in Next.js, Python, and cutting-edge AI solutions. Building production-grade applications with modern technologies.",
   keywords: [
     "AI Engineer",
     "Machine Learning",
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     "Python Developer",
     "Full Stack Developer",
     "Applied AI",
-    "Portfolio"
+    "Portfolio",
   ],
   authors: [{ name: "Dev ND" }],
   creator: "Dev ND",
@@ -34,13 +35,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://iamdevnd.dev",
     title: "Dev ND - Applied AI Engineer",
-    description: "Applied AI Engineer specializing in Next.js, Python, and cutting-edge AI solutions.",
+    description:
+      "Applied AI Engineer specializing in Next.js, Python, and cutting-edge AI solutions.",
     siteName: "Dev ND Portfolio",
   },
   twitter: {
     card: "summary_large_image",
     title: "Dev ND - Applied AI Engineer",
-    description: "Applied AI Engineer specializing in Next.js, Python, and cutting-edge AI solutions.",
+    description:
+      "Applied AI Engineer specializing in Next.js, Python, and cutting-edge AI solutions.",
   },
   robots: {
     index: true,
@@ -60,27 +63,32 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        {/* Google Analytics */}
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-41JVCPJ29P"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-41JVCPJ29P', {
-              page_title: document.title,
-              page_location: window.location.href,
-            });
-          `}
-        </Script>
-      </head>
       <body className={inter.className}>
+        {/* ✅ Google Analytics - load only if ID exists */}
+        {GA_MEASUREMENT_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_MEASUREMENT_ID}', {
+                  page_title: document.title,
+                  page_location: window.location.href,
+                });
+              `}
+            </Script>
+          </>
+        )}
+
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
