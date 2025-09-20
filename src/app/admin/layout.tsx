@@ -12,6 +12,8 @@
 //Security: Proper authentication flow with admin authorization
 //User Experience: Smooth transitions and loading states
 ////
+// src/app/layout.tsx - FIXED VERSION (Server Component)
+// src/app/admin/layout.tsx - COMPLETE ADMIN LAYOUT
 "use client"
 
 import { useEffect } from "react"
@@ -25,7 +27,8 @@ import {
   LogOut, 
   User,
   Menu,
-  X
+  X,
+  BarChart3
 } from "lucide-react"
 import { useState } from "react"
 
@@ -50,6 +53,11 @@ const adminNavItems = [
     title: "Blog Posts",
     href: "/admin/blog",
     icon: FileText,
+  },
+  {
+    title: "Analytics",
+    href: "/admin/analytics",
+    icon: BarChart3,
   },
   {
     title: "Settings",

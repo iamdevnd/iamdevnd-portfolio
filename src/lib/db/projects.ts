@@ -25,6 +25,7 @@
 //- published (Ascending) + category (Ascending) + createdAt (Descending)
 ////
 // src/lib/db/projects.ts - UPDATED VERSION
+// src/lib/db/projects.ts - COMPLETE UPDATED VERSION
 import { adminDb } from "@/lib/firebase/admin"
 import { unstable_cache } from 'next/cache'
 
@@ -313,22 +314,54 @@ export const getAllProjectSlugs = unstable_cache(
 
 /**
  * Admin function: Get all projects (including unpublished)
- * NOT CACHED - Always fresh data for admin
+ * NOT CACHED - Always fresh data for admin with detailed logging
  */
 export const getAllProjectsAdmin = async (): Promise<Project[]> => {
   try {
+    console.log('🔍 [ADMIN] Starting fresh project fetch from Firestore...')
+    console.log('🕐 [ADMIN] Request timestamp:', new Date().toISOString())
+    
     const projectsRef = adminDb.collection('projects')
+    console.log('📡 [ADMIN] Executing Firestore query...')
+    
     const snapshot = await projectsRef
       .orderBy('updatedAt', 'desc')
       .get()
 
+    console.log(`📊 [ADMIN] Firestore query completed. Documents found: ${snapshot.docs.length}`)
+
     if (snapshot.empty) {
+      console.log('📭 [ADMIN] No projects found in Firestore collection')
+      console.log('🔍 [ADMIN] Double-check that:')
+      console.log('   - Collection name is "projects"')
+      console.log('   - Documents exist in Firestore')
+      console.log('   - Firebase permissions are correct')
       return []
     }
 
-    return snapshot.docs.map(transformProjectDoc)
+    console.log('🔄 [ADMIN] Transforming Firestore documents...')
+    const projects = snapshot.docs.map((doc, index) => {
+      const data = doc.data()
+      console.log(`   ${index + 1}. Document ID: ${doc.id}`)
+      console.log(`      Title: ${data.title || 'No title'}`)
+      console.log(`      Published: ${data.published}`)
+      console.log(`      Featured: ${data.featured}`)
+      return transformProjectDoc(doc)
+    })
+    
+    console.log(`✅ [ADMIN] Successfully transformed ${projects.length} projects`)
+    console.log('📝 [ADMIN] Project summary:')
+    projects.forEach((project, index) => {
+      console.log(`   ${index + 1}. ${project.title} (${project.published ? 'Published' : 'Draft'})`)
+    })
+    
+    return projects
   } catch (error) {
-    console.error('Error fetching all projects (admin):', error)
+    console.error('❌ [ADMIN] Error fetching projects:', error)
+    console.error('🔧 [ADMIN] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
+    })
     return []
   }
 }
@@ -339,16 +372,20 @@ export const getAllProjectsAdmin = async (): Promise<Project[]> => {
  */
 export const getProjectByIdAdmin = async (id: string): Promise<Project | null> => {
   try {
+    console.log(`🔍 [ADMIN] Fetching project by ID: ${id}`)
     const projectRef = adminDb.collection('projects').doc(id)
     const doc = await projectRef.get()
 
     if (!doc.exists) {
+      console.log(`❌ [ADMIN] Project not found: ${id}`)
       return null
     }
 
-    return transformProjectDoc(doc)
+    const project = transformProjectDoc(doc)
+    console.log(`✅ [ADMIN] Found project: ${project.title}`)
+    return project
   } catch (error) {
-    console.error('Error fetching project by ID (admin):', error)
+    console.error('❌ [ADMIN] Error fetching project by ID:', error)
     return null
   }
 }
@@ -381,15 +418,17 @@ export async function revalidateProjects() {
 // ADMIN MUTATIONS (uncached)
 export async function createProject(projectData: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
   try {
+    console.log('🆕 [ADMIN] Creating new project:', projectData.title)
     const now = new Date()
     const docRef = await adminDb.collection('projects').add({
       ...projectData,
       createdAt: now,
       updatedAt: now,
     })
+    console.log(`✅ [ADMIN] Project created with ID: ${docRef.id}`)
     return docRef.id
   } catch (error) {
-    console.error('Error creating project:', error)
+    console.error('❌ [ADMIN] Error creating project:', error)
     throw new Error('Failed to create project')
   }
 }
@@ -399,29 +438,34 @@ export async function updateProject(
   projectData: Partial<Omit<Project, 'id' | 'createdAt'>>
 ): Promise<void> {
   try {
+    console.log(`🔄 [ADMIN] Updating project: ${id}`)
     const ref = adminDb.collection('projects').doc(id)
     const snapshot = await ref.get()
     if (!snapshot.exists) throw new Error('Project not found')
     const now = new Date()
     await ref.update({ ...projectData, updatedAt: now })
+    console.log(`✅ [ADMIN] Project updated: ${id}`)
   } catch (error) {
-    console.error('Error updating project:', error)
+    console.error('❌ [ADMIN] Error updating project:', error)
     throw new Error('Failed to update project')
   }
 }
 
 export async function deleteProject(id: string): Promise<void> {
   try {
+    console.log(`🗑️ [ADMIN] Deleting project: ${id}`)
     const ref = adminDb.collection('projects').doc(id)
     await ref.delete()
+    console.log(`✅ [ADMIN] Project deleted: ${id}`)
   } catch (error) {
-    console.error('Error deleting project:', error)
+    console.error('❌ [ADMIN] Error deleting project:', error)
     throw new Error('Failed to delete project')
   }
 }
 
 export async function toggleProjectPublished(id: string): Promise<void> {
   try {
+    console.log(`🔄 [ADMIN] Toggling published status for project: ${id}`)
     const ref = adminDb.collection('projects').doc(id)
     const snapshot = await ref.get()
     if (!snapshot.exists) throw new Error('Project not found')
@@ -432,25 +476,29 @@ export async function toggleProjectPublished(id: string): Promise<void> {
       published: willBePublished,
       updatedAt: now,
     })
+    console.log(`✅ [ADMIN] Project ${willBePublished ? 'published' : 'unpublished'}: ${id}`)
   } catch (error) {
-    console.error('Error toggling project published:', error)
+    console.error('❌ [ADMIN] Error toggling project published:', error)
     throw new Error('Failed to toggle project')
   }
 }
 
 export async function toggleProjectFeatured(id: string): Promise<void> {
   try {
+    console.log(`🔄 [ADMIN] Toggling featured status for project: ${id}`)
     const ref = adminDb.collection('projects').doc(id)
     const snapshot = await ref.get()
     if (!snapshot.exists) throw new Error('Project not found')
     const data = snapshot.data() || {}
+    const willBeFeatured = !data.featured
     const now = new Date()
     await ref.update({
-      featured: !data.featured,
+      featured: willBeFeatured,
       updatedAt: now,
     })
+    console.log(`✅ [ADMIN] Project ${willBeFeatured ? 'featured' : 'unfeatured'}: ${id}`)
   } catch (error) {
-    console.error('Error toggling project featured:', error)
+    console.error('❌ [ADMIN] Error toggling project featured:', error)
     throw new Error('Failed to toggle featured')
   }
 }
