@@ -40,6 +40,7 @@ import { ContactForm } from "@/components/contact-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { contactInfo, siteConfig } from "@/config/site"
+import { ResumeButton } from "@/components/resume-button"
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -150,7 +151,6 @@ export default function ContactPage() {
                 </Link>
               </Button>
 
-              {/* ✅ Added Schedule a Call button */}
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link href="https://app.cal.com/dnpro/" target="_blank" rel="noopener noreferrer">
                   <Calendar className="mr-2 h-4 w-4" />
@@ -167,14 +167,8 @@ export default function ContactPage() {
                 </Link>
               </Button>
 
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link href="/resume.pdf" target="_blank" rel="noopener noreferrer">
-                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  Download Resume
-                </Link>
-              </Button>
+              {/* Resume Button - Now shows modal instead of direct download */}
+              <ResumeButton />
             </CardContent>
           </Card>
 

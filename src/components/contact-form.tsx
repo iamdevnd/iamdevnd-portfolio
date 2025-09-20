@@ -43,8 +43,16 @@ const contactFormSchema = z.object({
     .enum(["ASAP", "1-3 months", "3-6 months", "6+ months", "Just exploring"])
     .optional(),
   projectType: z
-    .enum(["Web Application", "Mobile App", "AI/ML Project", "API Development", "Consulting", "Other"])
+    .enum([
+      "Web Application",
+      "Mobile App",
+      "AI/ML Project",
+      "API Development",
+      "Consulting",
+      "Other",
+    ])
     .optional(),
+  website: z.string().optional(), // Honeypot field
 })
 
 type FormData = z.infer<typeof contactFormSchema>
@@ -70,9 +78,15 @@ export function ContactForm() {
   const onSubmit = async (data: FormData) => {
     startTransition(async () => {
       try {
+        // Bot protection: ignore submissions if honeypot has value
+        if (data.website) {
+          console.warn("Bot submission detected, ignoring.")
+          return
+        }
+
         // Create FormData object
         const formData = new FormData()
-        
+
         Object.entries(data).forEach(([key, value]) => {
           if (value !== undefined && value !== "") {
             formData.append(key, value.toString())
@@ -81,7 +95,7 @@ export function ContactForm() {
 
         // Add metadata
         formData.append("userAgent", navigator.userAgent)
-        
+
         // Submit form
         const result = await submitContactForm(formData)
 
@@ -91,7 +105,7 @@ export function ContactForm() {
           toast.success(result.message)
         } else {
           toast.error(result.message)
-          
+
           // Handle field errors
           if (result.errors) {
             Object.entries(result.errors).forEach(([field, messages]) => {
@@ -122,10 +136,7 @@ export function ContactForm() {
                 Thanks for reaching out. I'll get back to you within 24 hours.
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => setIsSubmitted(false)}
-            >
+            <Button variant="outline" onClick={() => setIsSubmitted(false)}>
               Send Another Message
             </Button>
           </div>
@@ -144,6 +155,16 @@ export function ContactForm() {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* 🔒 Honeypot Field (hidden from humans, bots will fill it) */}
+          <input
+            {...register("website")}
+            type="text"
+            style={{ display: "none" }}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
+
           {/* Personal Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -192,7 +213,7 @@ export function ContactForm() {
           {/* Project Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Project Details</h3>
-            
+
             <div className="space-y-2">
               <label htmlFor="subject" className="text-sm font-medium">
                 Subject *
@@ -216,7 +237,7 @@ export function ContactForm() {
                 <select
                   id="projectType"
                   {...register("projectType")}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Select type</option>
                   <option value="Web Application">Web Application</option>
@@ -235,7 +256,7 @@ export function ContactForm() {
                 <select
                   id="budget"
                   {...register("budget")}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Select budget</option>
                   <option value="<$5k">&lt;$5k</option>
@@ -253,7 +274,7 @@ export function ContactForm() {
                 <select
                   id="timeline"
                   {...register("timeline")}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   <option value="">Select timeline</option>
                   <option value="ASAP">ASAP</option>

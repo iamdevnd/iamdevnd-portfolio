@@ -28,11 +28,13 @@ import { Menu, X, Sun, Moon, Monitor } from "lucide-react"
 import { siteConfig, mainNav } from "@/config/site"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { ResumeProtectionModal } from "@/components/resume-protection-modal"
 
 export function MainNav() {
   const pathname = usePathname()
   const { theme, setTheme } = useTheme()
   const [isOpen, setIsOpen] = React.useState(false)
+  const [showResumeModal, setShowResumeModal] = React.useState(false)
 
   // Close mobile menu when route changes
   React.useEffect(() => {
@@ -42,14 +44,14 @@ export function MainNav() {
   // Prevent scroll when mobile menu is open
   React.useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden'
+      document.body.style.overflow = "hidden"
     } else {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = "unset"
     }
-    
+
     // Cleanup function to reset overflow when component unmounts
     return () => {
-      document.body.style.overflow = 'unset'
+      document.body.style.overflow = "unset"
     }
   }, [isOpen])
 
@@ -59,10 +61,7 @@ export function MainNav() {
         variant="ghost"
         size="sm"
         onClick={() => setTheme("light")}
-        className={cn(
-          "p-2",
-          theme === "light" && "bg-muted"
-        )}
+        className={cn("p-2", theme === "light" && "bg-muted")}
         aria-label="Light theme"
       >
         <Sun className="h-4 w-4" />
@@ -71,10 +70,7 @@ export function MainNav() {
         variant="ghost"
         size="sm"
         onClick={() => setTheme("dark")}
-        className={cn(
-          "p-2",
-          theme === "dark" && "bg-muted"
-        )}
+        className={cn("p-2", theme === "dark" && "bg-muted")}
         aria-label="Dark theme"
       >
         <Moon className="h-4 w-4" />
@@ -83,10 +79,7 @@ export function MainNav() {
         variant="ghost"
         size="sm"
         onClick={() => setTheme("system")}
-        className={cn(
-          "p-2",
-          theme === "system" && "bg-muted"
-        )}
+        className={cn("p-2", theme === "system" && "bg-muted")}
         aria-label="System theme"
       >
         <Monitor className="h-4 w-4" />
@@ -96,7 +89,7 @@ export function MainNav() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b glass">
-  <div className="container flex h-16 items-center justify-between max-w-7xl mx-auto">
+      <div className="container flex h-16 items-center justify-between max-w-7xl mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
@@ -125,6 +118,12 @@ export function MainNav() {
         {/* Desktop Theme Toggle & CTA */}
         <div className="hidden md:flex items-center space-x-4">
           <ThemeToggle />
+          <Button
+            variant="ghost"
+            onClick={() => setShowResumeModal(true)}
+          >
+            Resume
+          </Button>
           <Button asChild>
             <Link href="/contact">Get In Touch</Link>
           </Button>
@@ -169,7 +168,7 @@ export function MainNav() {
                   </span>
                 </Link>
               ))}
-              
+
               {/* Mobile CTA */}
               <div className="pt-4 border-t">
                 <Button asChild className="w-full">
@@ -182,6 +181,12 @@ export function MainNav() {
           </div>
         </div>
       )}
+
+      {/* Resume Modal */}
+      <ResumeProtectionModal
+        isOpen={showResumeModal}
+        onClose={() => setShowResumeModal(false)}
+      />
     </header>
   )
 }
